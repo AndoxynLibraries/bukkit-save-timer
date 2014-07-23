@@ -18,7 +18,6 @@ package net.daboross.bukkitdev.bukkitsavetimer;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import lombok.NonNull;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
@@ -31,7 +30,7 @@ public class SaveTimer {
     private final boolean runTaskAsync;
     private int bukkitTaskId = -1;
 
-    public SaveTimer(@NonNull Plugin plugin, @NonNull Runnable saveTask, @NonNull TimeUnit intervalUnit, long interval, boolean runTaskAsync) {
+    public SaveTimer(Plugin plugin, Runnable saveTask, TimeUnit intervalUnit, long interval, boolean runTaskAsync) {
         this.plugin = plugin;
         this.saveTask = saveTask;
         this.intervalSeconds = intervalUnit.toSeconds(interval);
