@@ -26,7 +26,7 @@ public class SaveTimer {
     private final Plugin plugin;
     private final long intervalSeconds;
     private final Runnable saveTask;
-    private final AtomicBoolean changedSinceSave;
+    private final AtomicBoolean taskScheduled;
     private final boolean runTaskAsync;
     private int bukkitTaskId = -1;
 
@@ -34,7 +34,7 @@ public class SaveTimer {
         this.plugin = plugin;
         this.saveTask = saveTask;
         this.intervalSeconds = intervalUnit.toSeconds(interval);
-        this.changedSinceSave = new AtomicBoolean(false);
+        this.taskScheduled = new AtomicBoolean(false);
         this.runTaskAsync = runTaskAsync;
         this.startTask();
     }
@@ -47,18 +47,13 @@ public class SaveTimer {
         }
     }
 
-    public void restartTask() {
-        cancelTask();
-        startTask();
-    }
-
     private void startTask() {
         BukkitScheduler sc = plugin.getServer().getScheduler();
         long ticks = 20 * intervalSeconds;
         if (runTaskAsync) {
-            bukkitTaskId = sc.runTaskTimerAsynchronously(plugin, new SaveTimerRunnable(), ticks, ticks).getTaskId();
+            bukkitTaskId = sc.runTaskLaterAsynchronously(plugin, new SaveTimerRunnable(), ticks).getTaskId();
         } else {
-            bukkitTaskId = sc.runTaskTimer(plugin, new SaveTimerRunnable(), ticks, ticks).getTaskId();
+            bukkitTaskId = sc.runTaskLater(plugin, new SaveTimerRunnable(), ticks).getTaskId();
         }
     }
 
@@ -67,14 +62,17 @@ public class SaveTimer {
     }
 
     public void dataChanged() {
-        changedSinceSave.compareAndSet(false, true);
+        if (taskScheduled.compareAndSet(false, true)
+                || !plugin.getServer().getScheduler().isCurrentlyRunning(bukkitTaskId)) {
+            startTask();
+        }
     }
 
     private class SaveTimerRunnable implements Runnable {
 
         @Override
         public void run() {
-            if (changedSinceSave.compareAndSet(true, false)) {
+            if (taskScheduled.compareAndSet(true, false)) {
                 saveTask.run();
             }
         }
